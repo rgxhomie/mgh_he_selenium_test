@@ -2,7 +2,7 @@ const { WebElement, until } = require("selenium-webdriver");
 const { By,Key,Builder } = require("selenium-webdriver");
 require("chromedriver");
 
-const API_STORE_PATH_URL = "https://em.staging.api.onereach.ai/http/2200fa1f-8ac8-4d05-82a3-9e4e9421b2aa/mgh-path-collector";
+const API_STORE_PATH_URL = "https://em.mcgrawhill-staging.api.onereach.ai/http/ed5398e8-cee9-40de-acd2-b41149f00632/mgh-path-collector";
 const BOT_URL = "https://chat.mcgrawhill-staging.onereach.ai/7VOY6M7pQN6s0rQRSfAGMg/0ynr4kd?loader=light";
 const INPUT_AREA_XPATH = "//*[@id=\"app\"]/div/div[4]/div/div/div[2]/textarea";
 const BUTTON_MENU_XPATH = "//button[@class=\"menu-option\"]";
