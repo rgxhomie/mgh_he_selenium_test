@@ -7,10 +7,12 @@ const BOT_URL = "https://chat.mcgrawhill-staging.onereach.ai/7VOY6M7pQN6s0rQRSfA
 const INPUT_AREA_XPATH = "//*[@id=\"app\"]/div/div[4]/div/div/div[2]/textarea";
 const BUTTON_MENU_XPATH = "//button[@class=\"menu-option\"]";
 const BUTTON_ACTION_XPATH = "//button[@class=\"rwc-button rwc-button--outlined rwc-button--primary\"]";
+const BUTTON_END_XPATH = "//button[@class=\"rwc-button rwc-button--filled rwc-button--primary\"]";
 
 let runTest = 0;
 let testId = 0;
 let bot_path_taken;
+let previousMenuType = 'menu';
 
 async function main(iterationsToMake) {
     while(runTest < iterationsToMake) {
@@ -39,6 +41,8 @@ async function startCurrentTest() {
                 await interactWithMenu(driver, BUTTON_MENU_XPATH);
             } else if (currentMenuType == 'action') {
                 await interactWithMenu(driver, BUTTON_ACTION_XPATH);
+            } else if (currentMenuType == 'close') {
+                await interactWithMenu(driver, BUTTON_END_XPATH);
             } else {
                 lastMenuReached = true;
                 continue;
@@ -65,21 +69,28 @@ async function startCurrentTest() {
 }
 
 async function checkButtonsType(driver) {
-    let type;
+    let menuWaitingTime = previousMenuType == 'menu' ? 7 * 1000 : 2 * 1000;
     try {
-        await driver.wait(until.elementLocated(By.xpath(BUTTON_MENU_XPATH)), 7 * 1000);
-        type = 'menu'
+        await driver.wait(until.elementLocated(By.xpath(BUTTON_MENU_XPATH)), menuWaitingTime);
+        previousMenuType = 'menu';
+        return 'menu';
     }
     catch {
         try {
-            await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 3 * 1000);
-            type = 'action';
+            await driver.wait(until.elementLocated(By.xpath(BUTTON_END_XPATH)), 3 * 1000);
+            return 'close';
         }
         catch {
-            type = 'end';
+            try {
+                await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 2 * 1000);
+                previousMenuType = 'action'
+                return 'action';
+            }
+            catch {
+                return 'end';
+            }
         }
     }
-    return type;
 }
 
 async function interactWithMenu(driver, xpath) {
