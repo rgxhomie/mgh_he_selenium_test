@@ -2,15 +2,18 @@ const { WebElement, until } = require("selenium-webdriver");
 const { By,Key,Builder } = require("selenium-webdriver");
 require("chromedriver");
 
+const API_STORE_PATH_URL = "https://em.staging.api.onereach.ai/http/2200fa1f-8ac8-4d05-82a3-9e4e9421b2aa/mgh-path-collector";
 const BOT_URL = "https://chat.mcgrawhill-staging.onereach.ai/7VOY6M7pQN6s0rQRSfAGMg/0ynr4kd?loader=light";
 const INPUT_AREA_XPATH = "//*[@id=\"app\"]/div/div[4]/div/div/div[2]/textarea";
 const BUTTON_MENU_XPATH = "//button[@class=\"menu-option\"]";
 const BUTTON_ACTION_XPATH = "//button[@class=\"rwc-button rwc-button--outlined rwc-button--primary\"]";
-let runTest = true;
+
+let runTest = 0;
 let bot_path_taken;
 
-async function main() {
-    while(runTest) {
+async function main(iterationsToMake) {
+    while(runTest < iterationsToMake) {
+        runTest++;
         bot_path_taken = [];
         await startCurrentTest();
         console.log('current path', bot_path_taken);
@@ -25,7 +28,7 @@ async function startCurrentTest() {
         
         await driver.wait(until.elementLocated(By.xpath(INPUT_AREA_XPATH)), 30000);
         let currentElement = await driver.findElement(By.xpath(INPUT_AREA_XPATH));
-        await currentElement.sendKeys("SELENIUM_TEST", Key.ENTER);
+        await currentElement.sendKeys(`SELENIUM_TEST_${runTest}`, Key.ENTER);
 
         let lastMenuReached = false;
         while(!lastMenuReached) {
@@ -43,7 +46,18 @@ async function startCurrentTest() {
         }
     }
     finally {
-        //todo: fetch api
+        let bodyData = new FormData();
+        bodyData.append('testID', `SELENIUM_TEST_${runTest}`);
+        bodyData.append('takenPath', bot_path_taken);
+
+        fetch(API_STORE_PATH_URL, {
+            method: 'POST',
+            body: bodyData
+          })
+          .catch(err => {
+            console.log('Error occured on trying to fetch API', err);
+          });
+
         await driver.quit();
     }
 }
@@ -56,7 +70,7 @@ async function checkButtonsType(driver) {
     }
     catch {
         try {
-            await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 10000);
+            await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 5000);
             type = 'action';
         }
         catch {
@@ -69,9 +83,8 @@ async function checkButtonsType(driver) {
 async function interactWithMenu(driver, xpath) {
     await driver.wait(until.elementLocated(By.xpath(xpath)), 5000);
     let currentButtons = await driver.findElements(By.xpath(xpath));
-    let buttonsQuantity = currentButtons.length - 1;
+    let buttonsQuantity = currentButtons.length;
     let chosenButton = Math.floor(Math.random() * buttonsQuantity);
-    if (buttonsQuantity == 1) chosenButton = 1;
     let i = 0;
     for(let button of currentButtons) {
         if(i == chosenButton) {
@@ -88,4 +101,4 @@ function sleep(ms) {
 }
 
 
-main();
+main(1);
