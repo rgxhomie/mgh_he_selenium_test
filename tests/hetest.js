@@ -9,12 +9,14 @@ const BUTTON_MENU_XPATH = "//button[@class=\"menu-option\"]";
 const BUTTON_ACTION_XPATH = "//button[@class=\"rwc-button rwc-button--outlined rwc-button--primary\"]";
 
 let runTest = 0;
+let testId = 0;
 let bot_path_taken;
 
 async function main(iterationsToMake) {
     while(runTest < iterationsToMake) {
         runTest++;
         bot_path_taken = [];
+        testId = Math.floor(Math.random() * 9999) + 1;
         await startCurrentTest();
         console.log('current path', bot_path_taken);
     }
@@ -28,7 +30,7 @@ async function startCurrentTest() {
         
         await driver.wait(until.elementLocated(By.xpath(INPUT_AREA_XPATH)), 30000);
         let currentElement = await driver.findElement(By.xpath(INPUT_AREA_XPATH));
-        await currentElement.sendKeys(`SELENIUM_TEST_${runTest}`, Key.ENTER);
+        await currentElement.sendKeys(`SELENIUM_TEST_${testId}`, Key.ENTER);
 
         let lastMenuReached = false;
         while(!lastMenuReached) {
@@ -47,7 +49,7 @@ async function startCurrentTest() {
     }
     finally {
         let bodyData = new FormData();
-        bodyData.append('testID', `SELENIUM_TEST_${runTest}`);
+        bodyData.append('testID', `SELENIUM_TEST_${testId}`);
         bodyData.append('takenPath', bot_path_taken);
 
         fetch(API_STORE_PATH_URL, {
