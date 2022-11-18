@@ -53,6 +53,7 @@ async function startCurrentTest() {
         }
     }
     finally {
+        bot_path_taken = bot_path_taken.join("//");
         let bodyData = new FormData();
         bodyData.append('testID', `SELENIUM_TEST_${testId}`);
         bodyData.append('takenPath', bot_path_taken);
