@@ -12,6 +12,7 @@
   "dependencies": {
     "chromedriver": "^107.0.3",
     "geckodriver": "^3.2.0",
+    "lodash": "^4.17.21",
     "selenium-webdriver": "^4.6.1"
   }
 }

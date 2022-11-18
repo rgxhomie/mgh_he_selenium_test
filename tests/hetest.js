@@ -1,19 +1,24 @@
 const { WebElement, until } = require("selenium-webdriver");
 const { By,Key,Builder } = require("selenium-webdriver");
+const _ = require('lodash');
 require("chromedriver");
 
-const API_STORE_PATH_URL = "https://em.staging.api.onereach.ai/http/2200fa1f-8ac8-4d05-82a3-9e4e9421b2aa/mgh-path-collector";
+const API_STORE_PATH_URL = "https://em.mcgrawhill-staging.api.onereach.ai/http/ed5398e8-cee9-40de-acd2-b41149f00632/mgh-path-collector";
 const BOT_URL = "https://chat.mcgrawhill-staging.onereach.ai/7VOY6M7pQN6s0rQRSfAGMg/0ynr4kd?loader=light";
 const INPUT_AREA_XPATH = "//*[@id=\"app\"]/div/div[4]/div/div/div[2]/textarea";
 const BUTTON_MENU_XPATH = "//button[@class=\"menu-option\"]";
 const BUTTON_ACTION_XPATH = "//button[@class=\"rwc-button rwc-button--outlined rwc-button--primary\"]";
+const BUTTON_END_XPATH = "//button[@class=\"rwc-button rwc-button--filled rwc-button--primary\"]";
+const SENT_MESSAGES_XPATH = "//div[@class=\"message-bubble__text\"]";
 
 let runTest = 0;
 let testId = 0;
 let bot_path_taken;
+let nextWaitingTime;
 
 async function main(iterationsToMake) {
     while(runTest < iterationsToMake) {
+        nextWaitingTime = 20000;
         runTest++;
         bot_path_taken = [];
         testId = Math.floor(Math.random() * 9999) + 1;
@@ -28,7 +33,8 @@ async function startCurrentTest() {
     try {
         await driver.get(BOT_URL);
         
-        await driver.wait(until.elementLocated(By.xpath(INPUT_AREA_XPATH)), 30000);
+        await driver.wait(until.elementLocated(By.xpath(INPUT_AREA_XPATH)), nextWaitingTime);
+        nextWaitingTime = 10000;
         let currentElement = await driver.findElement(By.xpath(INPUT_AREA_XPATH));
         await currentElement.sendKeys(`SELENIUM_TEST_${testId}`, Key.ENTER);
 
@@ -39,15 +45,18 @@ async function startCurrentTest() {
                 await interactWithMenu(driver, BUTTON_MENU_XPATH);
             } else if (currentMenuType == 'action') {
                 await interactWithMenu(driver, BUTTON_ACTION_XPATH);
+            } else if (currentMenuType == 'close') {
+                await interactWithMenu(driver, BUTTON_END_XPATH);
             } else {
                 lastMenuReached = true;
                 continue;
             }
             
-            await sleep(10000);
+            await sleep(nextWaitingTime);
         }
     }
     finally {
+        bot_path_taken = bot_path_taken.join("//");
         let bodyData = new FormData();
         bodyData.append('testID', `SELENIUM_TEST_${testId}`);
         bodyData.append('takenPath', bot_path_taken);
@@ -65,33 +74,49 @@ async function startCurrentTest() {
 }
 
 async function checkButtonsType(driver) {
-    let type;
     try {
-        await driver.wait(until.elementLocated(By.xpath(BUTTON_MENU_XPATH)), 10000);
-        type = 'menu'
+        await driver.wait(until.elementLocated(By.xpath(BUTTON_MENU_XPATH)), nextWaitingTime);
+        return 'menu';
     }
     catch {
         try {
-            await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 5000);
-            type = 'action';
+            await driver.wait(until.elementLocated(By.xpath(BUTTON_END_XPATH)), nextWaitingTime);
+            return 'close';
         }
         catch {
-            type = 'end';
+            try {
+                await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 1000);
+                return 'action';
+            }
+            catch {
+                return 'end';
+            }
         }
     }
-    return type;
 }
 
 async function interactWithMenu(driver, xpath) {
-    await driver.wait(until.elementLocated(By.xpath(xpath)), 5000);
     let currentButtons = await driver.findElements(By.xpath(xpath));
     let buttonsQuantity = currentButtons.length;
     let chosenButton = Math.floor(Math.random() * buttonsQuantity);
+    if(buttonsQuantity == 2) {
+        let lastMessageText = '';
+        let sentMessages = await driver.findElements(By.xpath(SENT_MESSAGES_XPATH));
+        for(let msg of sentMessages) {
+            lastMessageText = await msg.getText();
+        }
+        if(_.includes(lastMessageText, "Can I help you with") || _.includes(lastMessageText, "Please take a moment to rate") || _.includes(lastMessageText, "Did this link resolve your")) {
+            chosenButton = 1;
+        } else if (_.includes(lastMessageText, "Would you like to transfer")) {
+            chosenButton = 0;
+        }
+    }
     let i = 0;
     for(let button of currentButtons) {
         if(i == chosenButton) {
             bot_path_taken.push(await button.getText());
             await button.click();
+            nextWaitingTime = 5000;
             break;
         }
         i++;
@@ -103,4 +128,4 @@ function sleep(ms) {
 }
 
 
-main(1);
+main(10);
