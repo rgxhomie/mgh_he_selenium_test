@@ -111,6 +111,15 @@ async function interactWithMenu(driver, xpath) {
             chosenButton = 0;
         }
     }
+    if(buttonsQuantity == 5) {
+        let lastMessageText = "";
+        let sentMessages = await driver.findElements(By.xpath(SENT_MESSAGES_XPATH));
+        for(let msg of sentMessages) {
+            if(_.includes(lastMessageText, "Please choose one of the categories") && chosenButton == 3) {
+                chosenButton = Math.floor(Math.random() * buttonsQuantity);
+            }
+        }
+    }
     let i = 0;
     for(let button of currentButtons) {
         if(i == chosenButton) {
@@ -128,4 +137,4 @@ function sleep(ms) {
 }
 
 
-main(10);
+main(20);
