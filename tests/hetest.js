@@ -137,4 +137,4 @@ function sleep(ms) {
 }
 
 
-main(20);
+main(Number(process.argv[2]));
