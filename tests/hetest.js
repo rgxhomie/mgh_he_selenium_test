@@ -1,5 +1,6 @@
 const { WebElement, until } = require("selenium-webdriver");
 const { By,Key,Builder } = require("selenium-webdriver");
+const _ = require('lodash');
 require("chromedriver");
 
 const API_STORE_PATH_URL = "https://em.mcgrawhill-staging.api.onereach.ai/http/ed5398e8-cee9-40de-acd2-b41149f00632/mgh-path-collector";
@@ -8,14 +9,16 @@ const INPUT_AREA_XPATH = "//*[@id=\"app\"]/div/div[4]/div/div/div[2]/textarea";
 const BUTTON_MENU_XPATH = "//button[@class=\"menu-option\"]";
 const BUTTON_ACTION_XPATH = "//button[@class=\"rwc-button rwc-button--outlined rwc-button--primary\"]";
 const BUTTON_END_XPATH = "//button[@class=\"rwc-button rwc-button--filled rwc-button--primary\"]";
+const SENT_MESSAGES_XPATH = "//div[@class=\"message-bubble__text\"]";
 
 let runTest = 0;
 let testId = 0;
 let bot_path_taken;
-let nextWaitingTime = 20000;
+let nextWaitingTime;
 
 async function main(iterationsToMake) {
     while(runTest < iterationsToMake) {
+        nextWaitingTime = 20000;
         runTest++;
         bot_path_taken = [];
         testId = Math.floor(Math.random() * 9999) + 1;
@@ -96,6 +99,18 @@ async function interactWithMenu(driver, xpath) {
     let currentButtons = await driver.findElements(By.xpath(xpath));
     let buttonsQuantity = currentButtons.length;
     let chosenButton = Math.floor(Math.random() * buttonsQuantity);
+    if(buttonsQuantity == 2) {
+        let lastMessageText = '';
+        let sentMessages = await driver.findElements(By.xpath(SENT_MESSAGES_XPATH));
+        for(let msg of sentMessages) {
+            lastMessageText = await msg.getText();
+        }
+        if(_.includes(lastMessageText, "Can I help you with") || _.includes(lastMessageText, "Please take a moment to rate") || _.includes(lastMessageText, "Did this link resolve your")) {
+            chosenButton = 1;
+        } else if (_.includes(lastMessageText, "Would you like to transfer")) {
+            chosenButton = 0;
+        }
+    }
     let i = 0;
     for(let button of currentButtons) {
         if(i == chosenButton) {
