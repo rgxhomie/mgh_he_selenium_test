@@ -12,7 +12,7 @@ const BUTTON_END_XPATH = "//button[@class=\"rwc-button rwc-button--filled rwc-bu
 let runTest = 0;
 let testId = 0;
 let bot_path_taken;
-let previousMenuType = 'menu';
+let nextWaitingTime = 20000;
 
 async function main(iterationsToMake) {
     while(runTest < iterationsToMake) {
@@ -30,7 +30,8 @@ async function startCurrentTest() {
     try {
         await driver.get(BOT_URL);
         
-        await driver.wait(until.elementLocated(By.xpath(INPUT_AREA_XPATH)), 30 * 1000);
+        await driver.wait(until.elementLocated(By.xpath(INPUT_AREA_XPATH)), nextWaitingTime);
+        nextWaitingTime = 10000;
         let currentElement = await driver.findElement(By.xpath(INPUT_AREA_XPATH));
         await currentElement.sendKeys(`SELENIUM_TEST_${testId}`, Key.ENTER);
 
@@ -48,7 +49,7 @@ async function startCurrentTest() {
                 continue;
             }
             
-            await sleep(5 * 1000);
+            await sleep(nextWaitingTime);
         }
     }
     finally {
@@ -69,21 +70,18 @@ async function startCurrentTest() {
 }
 
 async function checkButtonsType(driver) {
-    let menuWaitingTime = previousMenuType == 'menu' ? 7 * 1000 : 2 * 1000;
     try {
-        await driver.wait(until.elementLocated(By.xpath(BUTTON_MENU_XPATH)), menuWaitingTime);
-        previousMenuType = 'menu';
+        await driver.wait(until.elementLocated(By.xpath(BUTTON_MENU_XPATH)), nextWaitingTime);
         return 'menu';
     }
     catch {
         try {
-            await driver.wait(until.elementLocated(By.xpath(BUTTON_END_XPATH)), 3 * 1000);
+            await driver.wait(until.elementLocated(By.xpath(BUTTON_END_XPATH)), nextWaitingTime);
             return 'close';
         }
         catch {
             try {
-                await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 2 * 1000);
-                previousMenuType = 'action'
+                await driver.wait(until.elementLocated(By.xpath(BUTTON_ACTION_XPATH)), 1000);
                 return 'action';
             }
             catch {
@@ -94,7 +92,6 @@ async function checkButtonsType(driver) {
 }
 
 async function interactWithMenu(driver, xpath) {
-    await driver.wait(until.elementLocated(By.xpath(xpath)), 3 * 1000);
     let currentButtons = await driver.findElements(By.xpath(xpath));
     let buttonsQuantity = currentButtons.length;
     let chosenButton = Math.floor(Math.random() * buttonsQuantity);
@@ -103,6 +100,7 @@ async function interactWithMenu(driver, xpath) {
         if(i == chosenButton) {
             bot_path_taken.push(await button.getText());
             await button.click();
+            nextWaitingTime = 5000;
             break;
         }
         i++;
@@ -114,4 +112,4 @@ function sleep(ms) {
 }
 
 
-main(1);
+main(10);
