@@ -128,4 +128,4 @@ function sleep(ms) {
 }
 
 
-main(10);
+main(Number(process.argv[2]));
